@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import axios from 'axios';
 import './Login.css'
 class Login extends Component{
   state = {
@@ -11,42 +12,72 @@ class Login extends Component{
   }
 
   handleValidation = (field)=> {
-    var errors_obj = {...this.state.errors}
+    var errors = this.state.errors
     
     switch(field){
       case('email'):
         let emailField = this.state.email;
         const validEmailRegex =  /^(([^<>()\[\]\\.,;:\s@"]+(\.[^<>()\[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
-        errors_obj.email = validEmailRegex.test(emailField) ? '': "Email invalid"
+        errors.email = validEmailRegex.test(emailField) ? '': "Email invalid"
         debugger
         break;
       case('password'):
         let passwordField = this.state.password;
-        errors_obj.password = passwordField.length < 8
-          ? 'Password must be 8 characters long!'
+        errors.password = passwordField.length < 5
+          ? 'Password must be 6 characters long!'
           : ''; 
         break;  
       default:
         break  
     }
-    this.setState({errors: {...errors_obj} })
+    this.setState({errors})
   
   
   }
 
   handleInputChange = (event) => {
     const target = event.target;
-    const value = target.type === 'checkbox' ? target.checked : target.value;
+    const value =  target.value;
     const name = target.name;
     this.setState({
       [name]: value
     });
   }
 
+  isValidParams = () => {
+    this.handleValidation("email")
+    this.handleValidation("password")
+    debugger
+    let errors = this.state.errors
+    for (var key in errors) {
+      if (errors[key].length > 0) {
+          return false;
+      }
+      return true;
+    }
+
+    return true
+  }
+
   submitHandler = (event) => {
     event.preventDefault();
-    if(this.handleValidation("email") && this.handleValidation("password")){
-      console.log("valid  email")
+  
+
+    if(this.isValidParams()){
+      let data = {
+        email: this.state.email,
+        password: this.state.password
+      }
+      
+      
+      axios.post("/authenticate", data)
+        .then(res => {
+          console.log(res)
+          localStorage.setItem('token', res.data.auth_token)
+          this.props.history.push("/organisations")
+        }).catch( err => {
+          console.log(err)
+        })
     }
     else{
      
@@ -71,13 +102,15 @@ class Login extends Component{
               type="text"
               placeholder = "Email address"
               onChange = {this.handleInputChange}/>  
-            <spam class = "login__container__error">{this.state.errors.email}</spam>  
+            <span className = "login__container__error">{this.state.errors.email}</span>  
             <h5>Password:</h5> 
             <input
               name="password"
               placeholder= "Enter password"
-              type="password"/>
-            <spam class = "login__container__error">{this.state.errors.password}</spam>  
+              type="password"
+              onChange = {this.handleInputChange}
+              />
+            <span className = "login__container__error">{this.state.errors.password}</span>  
   
 
             <button className = "login__signInButton"> Sign In </button>  
